@@ -54,8 +54,10 @@ pub fn part_one() {
     let ranges = get_input_data();
 
     let sum = get_sum_invalid_ids(&ranges);
+    let sum_part_two = get_sum_invalid_ids_part_two(&ranges);
 
     println!("The sum of the invalid IDs is: {}", sum);
+    println!("The sum of the invalid IDs is: {}", sum_part_two);
 }
 
 pub fn get_input_data() -> Vec<Vec<i64>> {
@@ -105,23 +107,6 @@ pub fn is_valid_id(id: i64) -> bool {
     return true;
 }
 
-pub fn get_count_invalid_ids(range: &Vec<i64>) -> i64 {
-    let mut count = 0;
-
-    assert!(range.len() == 2, "Range must have 2 numbers");
-
-    let start = range[0];
-    let end = range[1];
-
-    for id in start..=end {
-        if !is_valid_id(id) {
-            count += 1;
-        }
-    }
-
-    return count;
-}
-
 pub fn get_invalid_ids(range: &Vec<i64>) -> Vec<i64> {
     let mut invalid_ids = Vec::new();
 
@@ -152,7 +137,98 @@ pub fn get_sum_invalid_ids(ranges: &Vec<Vec<i64>>) -> i64 {
     return sum;
 }
 
+// The clerk quickly discovers that there are still invalid IDs in the ranges in your list. Maybe the young Elf was doing other silly patterns as well?
+
+// Now, an ID is invalid if it is made only of some sequence of digits repeated at least twice. So, 12341234 (1234 two times), 123123123 (123 three times), 1212121212 (12 five times), and 1111111 (1 seven times) are all invalid IDs.
+
+// From the same example as before:
+
+// 11-22 still has two invalid IDs, 11 and 22.
+// 95-115 now has two invalid IDs, 99 and 111.
+// 998-1012 now has two invalid IDs, 999 and 1010.
+// 1188511880-1188511890 still has one invalid ID, 1188511885.
+// 222220-222224 still has one invalid ID, 222222.
+// 1698522-1698528 still contains no invalid IDs.
+// 446443-446449 still has one invalid ID, 446446.
+// 38593856-38593862 still has one invalid ID, 38593859.
+// 565653-565659 now has one invalid ID, 565656.
+// 824824821-824824827 now has one invalid ID, 824824824.
+// 2121212118-2121212124 now has one invalid ID, 2121212121.
+// Adding up all the invalid IDs in this example produces 4174379265.
+
+// What do you get if you add up all of the invalid IDs using these new rules?
 pub fn part_two() {}
+
+fn is_valid_id_part_two(id: i64) -> bool {
+    let id_str = id.to_string();
+
+    // strip out the leading 0
+    let id_str = id_str.trim_start_matches('0');
+    let mut has_repeated_sequence = false;
+
+    let is_odd_length = id_str.len() % 2 != 0;
+    let max_sequences = if is_odd_length {
+        (id_str.len() - 1) / 2
+    } else {
+        id_str.len() / 2
+    };
+
+    for sequence_length in 1..=max_sequences {
+        let is_valid_sequence_length = id_str.len() % sequence_length == 0;
+
+        if !is_valid_sequence_length {
+            continue;
+        }
+
+        let num_sequences = id_str.len() / sequence_length;
+
+        let mut sequences = Vec::new();
+
+        for i in 0..num_sequences {
+            let sequence = id_str[i * sequence_length..(i + 1) * sequence_length].to_string();
+            sequences.push(sequence);
+        }
+
+        // check all of them
+        let all_sequences_are_the_same = sequences.iter().all(|sequence| sequence == &sequences[0]);
+        if all_sequences_are_the_same {
+            has_repeated_sequence = true;
+            break;
+        }
+    }
+
+    return !has_repeated_sequence;
+}
+
+pub fn get_invalid_ids_part_two(range: &Vec<i64>) -> Vec<i64> {
+    let mut invalid_ids = Vec::new();
+
+    assert!(range.len() == 2, "Range must have 2 numbers");
+
+    let start = range[0];
+    let end = range[1];
+
+    for id in start..=end {
+        if !is_valid_id_part_two(id) {
+            invalid_ids.push(id);
+        }
+    }
+
+    return invalid_ids;
+}
+
+pub fn get_sum_invalid_ids_part_two(ranges: &Vec<Vec<i64>>) -> i64 {
+    let mut sum = 0;
+
+    for range in ranges {
+        let invalid_ids = get_invalid_ids_part_two(range);
+        for id in invalid_ids {
+            sum += id;
+        }
+    }
+
+    return sum;
+}
 
 #[cfg(test)]
 mod tests {
@@ -170,39 +246,6 @@ mod tests {
     }
 
     #[test]
-    fn test_get_count_invalid_ids() {
-        assert_eq!(
-            get_count_invalid_ids(&vec![11, 22]),
-            2,
-            "11 and 22 are invalid IDs"
-        );
-        assert_eq!(
-            get_count_invalid_ids(&vec![95, 115]),
-            1,
-            "99 is an invalid ID"
-        );
-        assert_eq!(
-            get_count_invalid_ids(&vec![998, 1012]),
-            1,
-            "1010 is an invalid ID"
-        );
-        assert_eq!(
-            get_count_invalid_ids(&vec![1188511880, 1188511890]),
-            1,
-            "1188511885 is an invalid ID"
-        );
-        assert_eq!(
-            get_count_invalid_ids(&vec![222220, 222224]),
-            1,
-            "222222 is an invalid ID"
-        );
-        assert_eq!(
-            get_count_invalid_ids(&vec![1698522, 1698528]),
-            0,
-            "No invalid IDs"
-        );
-    }
-
     fn test_get_invalid_ids() {
         assert_eq!(
             get_invalid_ids(&vec![11, 22]),
@@ -280,5 +323,31 @@ mod tests {
             1227775554,
             "The sum of the invalid IDs is 1227775554"
         );
+    }
+
+    #[test]
+    fn test_is_valid_id_part_two() {
+        // 12341234 (1234 two times), 123123123 (123 three times), 1212121212 (12 five times), and 1111111 (1 seven times) are all invalid IDs.
+        assert_eq!(
+            is_valid_id_part_two(12341234),
+            false,
+            "12341234 is an invalid ID"
+        );
+        assert_eq!(
+            is_valid_id_part_two(123123123),
+            false,
+            "123123123 is an invalid ID"
+        );
+        assert_eq!(
+            is_valid_id_part_two(1212121212),
+            false,
+            "1212121212 is an invalid ID"
+        );
+        assert_eq!(
+            is_valid_id_part_two(1111111),
+            false,
+            "1111111 is an invalid ID"
+        );
+        assert_eq!(is_valid_id_part_two(12345), true, "12345 is a valid ID");
     }
 }

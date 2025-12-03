@@ -46,7 +46,7 @@ use std::io::{BufRead, BufReader};
 
 pub fn day_three() {
     part_one();
-    // part_two();
+    part_two();
 }
 pub fn part_one() {
     let banks = get_input_data();
@@ -87,7 +87,11 @@ pub fn part_one() {
 // The total output joltage is now much larger: 987654321111 + 811111111119
 // + 434234234278 + 888911112111 = 3121910778619.
 
-pub fn part_two() {}
+pub fn part_two() {
+    let banks = get_input_data();
+    let joltage = get_joltage_from_banks_part_two(banks);
+    println!("Part 2: The total output joltage is: {}", joltage);
+}
 
 pub fn get_input_data() -> Vec<String> {
     let file_path = "src/day_3_input.txt";
@@ -134,6 +138,47 @@ pub fn get_joltage_from_banks(banks: Vec<String>) -> i32 {
     return joltage;
 }
 
+pub fn get_joltage_from_bank_part_two(bank: &str) -> i64 {
+    let length = bank.len();
+    if length <= 12 {
+        return bank.parse::<i64>().unwrap();
+    }
+
+    let mut result = String::new();
+    let mut start_idx = 0;
+
+    // the 12 digits we need to find
+    for position in 0..12 {
+        let remaining_digits = 12 - position - 1;
+        let max_to_choose_from = length - remaining_digits;
+
+        let mut max_digit = 0;
+        let mut max_idx = start_idx;
+
+        for i in start_idx..max_to_choose_from {
+            let digit = bank.chars().nth(i).unwrap().to_digit(10).unwrap();
+            if digit > max_digit {
+                max_digit = digit;
+                max_idx = i;
+            }
+        }
+
+        result.push(bank.chars().nth(max_idx).unwrap());
+
+        start_idx = max_idx + 1;
+    }
+
+    return result.parse::<i64>().unwrap();
+}
+
+pub fn get_joltage_from_banks_part_two(banks: Vec<String>) -> i64 {
+    let mut joltage = 0;
+    for bank in banks {
+        joltage += get_joltage_from_bank_part_two(&bank.as_str());
+    }
+    return joltage;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -156,6 +201,53 @@ mod tests {
                 String::from("818181911112111")
             ]),
             357
+        );
+    }
+
+    #[test]
+    fn test_get_joltage_from_bank_part_two() {
+        // test less than 12
+        assert_eq!(get_joltage_from_bank_part_two("1234"), 1234);
+
+        // test = 12
+        assert_eq!(get_joltage_from_bank_part_two("123456789012"), 123456789012);
+
+        assert_eq!(
+            get_joltage_from_bank_part_two("1223456789012"),
+            223456789012
+        );
+        assert_eq!(
+            get_joltage_from_bank_part_two("13223456789012"),
+            323456789012
+        );
+        assert_eq!(
+            get_joltage_from_bank_part_two("987654321111111"),
+            987654321111
+        );
+        assert_eq!(
+            get_joltage_from_bank_part_two("811111111111119"),
+            811111111119
+        );
+        assert_eq!(
+            get_joltage_from_bank_part_two("234234234234278"),
+            434234234278
+        );
+        assert_eq!(
+            get_joltage_from_bank_part_two("818181911112111"),
+            888911112111
+        );
+    }
+
+    #[test]
+    fn test_get_joltage_from_banks_part_two() {
+        assert_eq!(
+            get_joltage_from_banks_part_two(vec![
+                String::from("987654321111111"),
+                String::from("811111111111119"),
+                String::from("234234234234278"),
+                String::from("818181911112111")
+            ]),
+            3121910778619
         );
     }
 }

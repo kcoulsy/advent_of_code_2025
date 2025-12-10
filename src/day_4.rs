@@ -4,7 +4,8 @@ use std::{
 };
 
 pub fn day_four() {
-    part_one();
+    // part_one();
+    part_two();
 }
 
 // If you can optimize the work the forklifts are doing, maybe they would have
@@ -63,6 +64,38 @@ fn part_one() {
         "The number of accessible rolls is: {}",
         count_accessible_rolls
     );
+}
+
+// Now, the Elves just need help accessing as much of the paper as they can.
+
+// Once a roll of paper can be accessed by a forklift, it can be removed.
+// Once a roll of paper is removed, the forklifts might be able to access
+// more rolls of paper, which they might also be able to remove. How many
+// total rolls of paper could the Elves remove if they keep repeating this process?
+
+// Starting with the same example as above, here is one way you could remove
+// as many rolls of paper as possible, using highlighted @ to indicate that
+// a roll of paper is about to be removed, and using x to indicate that a roll of paper was just removed:
+
+fn part_two() {
+    let mut grid = get_input_data();
+    let (accessible_rolls, count_accessible_rolls) = get_accessible_rolls(&grid);
+
+    grid = accessible_rolls;
+    let mut count = count_accessible_rolls;
+    let mut count_removed = count_accessible_rolls;
+
+    while count > 0 {
+        let (accessible_rolls, count_accessible_rolls) = get_accessible_rolls(&grid);
+
+        println!("\n\nnew grid: removed {} rolls", count_accessible_rolls);
+
+        grid = accessible_rolls;
+        count = count_accessible_rolls;
+        count_removed += count_accessible_rolls;
+    }
+
+    println!("total rolls: {}", count_removed);
 }
 
 fn get_accessible_rolls(grid: &Vec<String>) -> (Vec<String>, u32) {
